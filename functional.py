@@ -9,6 +9,7 @@ router = Router()
 
 with open("stickers.txt") as file:
     stickers = file.readline().split(',')
+
 @router.message(Command("start"))
 async def start_message(msg: Message):
     await msg.answer("Привет! Меня зовут Маврик! Я маленький добренький котик, живущий самой обычной жизнью) Надеюсь, мы подружимся!😸❤️\n\nНе забудь подписаться на официальный канал -> @How_Mavrik_was_made")
@@ -21,5 +22,18 @@ async def hello_new_person(msg: Message):
 @router.message()
 async def sticker_answer(msg: Message):
     text = msg.text.lower()
-    if (text == "мур" or text == "мяу"):
+    if ("мур" in text or "мяу" in text):
         await msg.answer_sticker(random.choice(stickers))
+    command = text.split(' ')
+    if (command[0] == "вероятность"):
+        rand = random.randint(1, 5)
+        if rand == 1:
+            await msg.answer(f"🧙🏻‍♂️Святой Амур говорит {random.randint(1, 100)}%")
+        elif rand == 2:
+            await msg.answer(f"🐈Мяу! Да здесь все {random.randint(1, 100)}%")
+        elif rand == 3:
+            await msg.answer(f"Может быть {random.randint(1, 100)}%, а может и нет😜")
+        elif rand == 4:
+            await msg.answer(f"Глубоко проанализировав данный вопрос, а также изучив необходимый материал, с вероятностью {random.randint(1, 100)}% я могу заявить, что это правда🤓")
+        elif rand == 5:
+            await msg.answer(f"🕊Птичка нашептала, что {random.randint(1, 100)}%")
