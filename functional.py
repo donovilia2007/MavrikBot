@@ -20,8 +20,18 @@ async def hello_new_person(msg: Message):
     await msg.answer(f"Привет [{new_member.first_name}](tg://user?id={str(new_member.id)})! Добро пожаловать в этот уютный чатик!\n\nРасскажи о себе, чтобы поскорее познакомиться со всеми😸", parse_mode="Markdown")
 
 @router.message()
-async def sticker_answer(msg: Message):
+async def text_answer(msg: Message):
     text = msg.text.lower()
+    if (text == "пинг"):
+        await msg.answer("ПОНГ🏓")
+    if (text == "динь"):
+        await msg.answer("ДОН🔔")
+    if (text == "бум"):
+        await msg.answer("БОМ🥁")
+    if (text == "💃"):
+        await msg.answer("Танцуй!🕺")
+    if (text == "🎤"):
+        await msg.answer("МЯУ-МЯУ-МЯУ-МЯЯЯЯЯУ!🎶")
     if ("мур" in text or "мяу" in text):
         await msg.answer_sticker(random.choice(stickers))
     command = text.split(' ')
