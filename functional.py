@@ -4,7 +4,6 @@ from aiogram.types import Message, ContentType, Chat
 from aiogram.filters import Command
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.methods import GetChatMember
 
 router = Router()
 f = open("TOKEN.txt")
