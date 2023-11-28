@@ -77,6 +77,8 @@ async def mute(msg: Message):
                                         await msg.answer(f"[{person_mute.user.first_name}](tg://user?id={str(person_mute_id)}) был лишён права голоса на {time} часов", parse_mode="Markdown")
                                 else:
                                     await msg.answer(f"Я готов замутить [{person_mute.user.first_name}](tg://user?id={str(person_mute_id)}) на любое количество коточасов, но, к сожалению, я не знаю, сколько это😿", parse_mode="Markdown")
+                        else:
+                            await msg.answer("Я тебя совсем не понимаю...")
                 else:
                     await msg.answer("Ты не можешь использовать эту команду!")
 
