@@ -85,7 +85,7 @@ async def unmute(msg: Message):
         await msg.answer("Эту команду нельзя использовать в личных сообщениях")
     else:
         if (msg.reply_to_message == "None"):
-            await msg.answer("Чтобы замутить пользователя, нужно ответить на его сообщение командой /mute")
+            await msg.answer("Чтобы размутить пользователя, нужно ответить на его сообщение командой /unmute")
         else:
             chat_id = msg.chat.id
             person_id = msg.from_user.id
