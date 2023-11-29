@@ -26,7 +26,7 @@ async def mute(msg: Message):
     if (msg.chat.type != "supergroup"):
         await msg.answer("Эту команду нельзя использовать в личных сообщениях")
     else:
-        if (msg.reply_to_message == "None"):
+        if (msg.reply_to_message == None):
             await msg.answer("Чтобы замутить пользователя, нужно ответить на его сообщение командой /mute")
         else:
             chat_id = msg.chat.id
@@ -42,7 +42,7 @@ async def mute(msg: Message):
                         await msg.answer("Ау! Он уже замучен, слышишь?")
                     else:
                         sms = msg.text.split(" ")
-                        permissions = ChatPermissions(can_send_messages=False, can_send_audios=False, can_send_documents=False, can_send_photos=False, can_send_videos=False, can_send_video_notes=False, can_send_voice_notes=False, can_send_polls=False, can_send_other_messages=False)
+                        permissions = ChatPermissions(can_send_messages=False, can_send_audios=False, can_send_documents=False, can_send_photos=False, can_send_videos=False, can_send_video_notes=False, can_send_voice_notes=False, can_send_polls=False, can_send_other_messages=False, can_add_web_page_previews=False)
                         if (len(sms) == 1):
                             await bot.restrict_chat_member(chat_id=chat_id, user_id=person_mute_id, permissions=permissions, until_date=datetime.now() + timedelta(minutes=15))
                         elif (len(sms) == 3):
@@ -87,7 +87,7 @@ async def unmute(msg: Message):
     if (msg.chat.type != "supergroup"):
         await msg.answer("Эту команду нельзя использовать в личных сообщениях")
     else:
-        if (msg.reply_to_message == "None"):
+        if (msg.reply_to_message == None):
             await msg.answer("Чтобы размутить пользователя, нужно ответить на его сообщение командой /unmute")
         else:
             chat_id = msg.chat.id
@@ -96,9 +96,11 @@ async def unmute(msg: Message):
             person_mute_id = msg.reply_to_message.from_user.id
             person_mute = await bot.get_chat_member(chat_id, person_mute_id)
             if (person.can_restrict_members == "True" or person.status == "creator"):
-                permissions = ChatPermissions(can_send_messages=True, can_send_audios=True, can_send_documents=True, can_send_photos=True, can_send_videos=True, can_send_video_notes=True, can_send_voice_notes=True, can_send_polls=True, can_send_other_messages=True)
+                permissions = ChatPermissions(can_send_messages=True, can_send_audios=True, can_send_documents=True, can_send_photos=True, can_send_videos=True, can_send_video_notes=True, can_send_voice_notes=True, can_send_polls=True, can_send_other_messages=True, can_add_web_page_previews=True)
                 await bot.restrict_chat_member(chat_id=chat_id, user_id=person_mute_id, permissions=permissions)
                 await msg.answer(f"Святые котики, [{person_mute.user.first_name}](tg://user?id={str(person_mute_id)}) снова может разговаривать! Но впредь, держи язык за зубами...", parse_mode="Markdown")
+            else:
+                await msg.answer("Мне кажется, ты не можешь использовать эту команду")
 
 @router.message(F.new_chat_members)
 async def hello_new_person(msg: Message):
