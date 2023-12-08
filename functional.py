@@ -109,6 +109,8 @@ async def hello_new_person(msg: Message):
 
 @router.message()
 async def text_answer(msg: Message):
+    if (msg.text == None):
+        return
     text = msg.text.lower()
     if (text == "пинг"):
         await msg.answer("ПОНГ🏓")
