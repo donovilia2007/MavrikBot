@@ -2,7 +2,7 @@ import random
 
 
 from aiogram import types, F, Router, Dispatcher, Bot
-from aiogram.types import Message, ContentType, ChatPermissions
+from aiogram.types import Message, ContentType, ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, MessageEntity
 from aiogram.filters import Command
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -14,11 +14,36 @@ token = f.read()
 dp = Dispatcher(storage=MemoryStorage())
 bot = Bot(token=token, parse_mode=ParseMode.HTML)
 
+santa_dict = {}
+
 with open("stickers.txt") as file:
     stickers = file.readline().split(',')
 
 @router.message(Command("start"))
 async def start_message(msg: Message):
+    text = msg.text.split(" ")
+    user = msg.from_user.id
+    if len(text) > 1:
+        text = [text[0]] + text[1].split('-')
+        key = '-100' + text[1]
+        ms_key = text[2]
+        if key in santa_dict and msg.chat.type == "private":
+            chat = await bot.get_chat(key)
+            if user in santa_dict[key]:
+                await msg.answer("Ты уже играешь!")
+            else:
+                santa_dict[key].append(user)
+                await msg.answer(f"🎄Ты присоединился к игре в чате *{chat.title}*", parse_mode="Markdown")
+                sms = "Хо-хо-хо! А кто это у нас решил поиграть в тайного санту?🎅\n\nИграют:\n"
+                for i in range(0, len(santa_dict[key])):
+                    person = await bot.get_chat_member(chat_id=key, user_id=santa_dict[key][i])
+                    sms += f"{i + 1}. [{person.user.first_name}](tg://user?id={person.user.id})\n"
+                    button = InlineKeyboardButton(text="Хочу быть Сантой", url=f"t.me/Mavrik_my_Bot?start={key[4:]}-{ms_key}")
+                    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button]])
+                await bot.edit_message_text(chat_id=key, message_id=ms_key, text=sms, parse_mode="Markdown", reply_markup=keyboard)
+        else:
+            await msg.answer("Ай-ай, шалунишка!")
+        return
     await msg.answer("Привет! Меня зовут Маврик! Я маленький добренький котик, живущий самой обычной жизнью) Надеюсь, мы подружимся!😸❤️\n\nНе забудь подписаться на официальный канал -> @How_Mavrik_was_made")
 
 @router.message(Command("mute"))
@@ -102,11 +127,74 @@ async def unmute(msg: Message):
             else:
                 await msg.answer("Мне кажется, ты не можешь использовать эту команду")
 
+@router.message(Command("santa"))
+async def santa(msg: Message):
+    if (msg.chat.type != "supergroup"):
+        await msg.answer("Я бы с радостью подарил тебе 10 подарочков, но, к сожалению, команду можно использовать только в групповых чатах")
+        return
+    else:
+        chat_id = str(msg.chat.id)
+        person_id = msg.from_user.id
+        person = await bot.get_chat_member(chat_id, person_id)
+        if person.status != "administrator" and person.status != "creator":
+            await msg.answer("У тебя недостаточно прав")
+            return
+        ch_id = chat_id[4:]
+        if chat_id in santa_dict:
+            await msg.reply("Распределение тайных сант уже запущено!")
+            return
+        button = InlineKeyboardButton(text="Хочу быть Сантой", url=f"t.me/Mavrik_my_Bot?start={ch_id}")
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[button]])
+        santa_dict[chat_id] = []
+        mes = await msg.answer("Хо-хо-хо! А кто это у нас решил поиграть в тайного санту?🎅", reply_markup=keyboard)
+        mes_id = mes.message_id
+        button = InlineKeyboardButton(text="Хочу быть Сантой", url=f"t.me/Mavrik_my_Bot?start={ch_id}-{mes_id}")
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[button]])
+        await bot.edit_message_reply_markup(chat_id=chat_id, message_id=mes_id, reply_markup=keyboard)
+
+@router.message(Command("start_santa"))
+async def hey_santa(msg: Message):
+    if (msg.chat.type != "supergroup"):
+        await msg.answer("Эта команда не может быть запущена в личных сообщениях!")
+        return
+    else:
+        chat_id = str(msg.chat.id)
+        person_id = msg.from_user.id
+        person = await bot.get_chat_member(chat_id, person_id)
+        if person.status != "administrator" and person.status != "creator":
+            await msg.answer("У тебя недостаточно прав")
+            return
+        if chat_id in santa_dict:
+            mas = santa_dict[chat_id]
+            mas2 = list(mas)
+            flag = True
+            while flag:
+                random.shuffle(mas2)
+                k = 0
+                for i in range(0, len(mas)):
+                    if mas[i] == mas2[i]:
+                        k += 1
+                        break
+                if k == 0:
+                    flag = False
+                    break
+            for i in range(0, len(mas)):
+                prs_id = mas[i]
+                prs2_id = mas2[i]
+                prs2 = await bot.get_chat(prs2_id)
+                await bot.send_message(chat_id=prs_id, text=f"🎇Хо-хо! На этот Новый Год ты становишься тайным сантой для [{prs2.first_name}](tg://{prs2.id})", parse_mode="Markdown")
+            sms = "🎁Жеребьёвка окончена! Тайными Сантами стали:\n"
+            for i in range(0, len(mas)):
+                person = await bot.get_chat_member(chat_id=chat_id, user_id=santa_dict[chat_id][i])
+                sms += f"{i + 1}. [{person.user.first_name}](tg://user?id={person.user.id})\n"
+            await msg.answer(text=sms, parse_mode="Markdown")
+            del santa_dict[chat_id]
+        else:
+            await msg.answer("В этом чате ещё не проводилась жеребьёвка. Чтобы её запустить, администратор чата должен вызвать команду /santa")
 @router.message(F.new_chat_members)
 async def hello_new_person(msg: Message):
     new_member = msg.new_chat_members[0]
     await msg.answer(f"Привет [{new_member.first_name}](tg://user?id={str(new_member.id)})! Добро пожаловать в этот уютный чатик!\n\nРасскажи о себе, чтобы поскорее познакомиться со всеми😸", parse_mode="Markdown")
-
 @router.message()
 async def text_answer(msg: Message):
     if (msg.text == None):
