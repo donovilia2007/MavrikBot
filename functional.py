@@ -182,7 +182,7 @@ async def hey_santa(msg: Message):
                 prs_id = mas[i]
                 prs2_id = mas2[i]
                 prs2 = await bot.get_chat(prs2_id)
-                await bot.send_message(chat_id=prs_id, text=f"🎇Хо-хо! На этот Новый Год ты становишься тайным сантой для [{prs2.first_name}](tg://{prs2.id})", parse_mode="Markdown")
+                await bot.send_message(chat_id=prs_id, text=f"🎇Хо-хо! На этот Новый Год ты становишься тайным сантой для [{prs2.first_name}](tg://user?id={prs2.id})", parse_mode="Markdown")
             sms = "🎁Жеребьёвка окончена! Тайными Сантами стали:\n"
             for i in range(0, len(mas)):
                 person = await bot.get_chat_member(chat_id=chat_id, user_id=santa_dict[chat_id][i])
