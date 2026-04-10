@@ -1,5 +1,8 @@
+.gitignore
 TOKEN.txt
 req.txt
 .venv
 venv
 path
+.idea/
+__pycache__/
