@@ -10,5 +10,7 @@ async def main():
     await SantaGame.init_db()
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                        filename='MavrikBot.log', filemode='a', encoding='utf-8')
     asyncio.run(main())

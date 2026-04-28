@@ -12,11 +12,23 @@ token = f.read()
 dp = Dispatcher(storage=MemoryStorage())
 bot = Bot(token=token)
 
+
 class SantaGame:
+    """
+    SantaGame --- класс, который отвечает за базу данных со всеми играми в Тайного Санту.
+
+    Имеет атрибут db --- расположение базы данных.
+    """
     db = "santa.db"
 
     @classmethod
     async def init_db(cls):
+        """
+        Инициализирует базу данных.
+        Не принимает аргументов.
+        Ничего не возвращает.
+        Является @classmethod.
+        """
         async with aiosqlite.connect(cls.db) as db:
             await db.execute('''CREATE TABLE IF NOT EXISTS participants
                                 (chat_id TEXT, user_id INTEGER, recipient_id INTEGER, 
@@ -25,6 +37,12 @@ class SantaGame:
 
     @classmethod
     async def add_player(cls, chat_id, user_id):
+        """
+        Добавляет пользователя в игру.
+        Принимает chat_id и user_id --- id группы, в которой ведётся игра и id пользователя, который хочет вступить в игру.
+        Возвращает bool --- удалось ли пользователя в игру.
+        Является @classmethod.
+        """
         async with aiosqlite.connect(cls.db) as db:
             try:
                 await db.execute('''INSERT INTO participants (chat_id, user_id)
@@ -36,11 +54,17 @@ class SantaGame:
 
     @classmethod
     async def remove_player(cls, chat_id, user_id):
+        """
+        Удаляет пользователя из игры.
+        Принимает chat_id и user_id --- id группы, в которой ведётся игра и id пользователя, который хочет выйти из игры.
+        Возвращает bool --- удалось ли удалить пользователя из игры.
+        Является @classmethod.
+        """
         async with aiosqlite.connect(cls.db) as db:
             try:
                 await db.execute('''DELETE FROM participants 
                                     WHERE chat_id = ? AND user_id = ?''',
-                                    (str(chat_id), str(user_id)))
+                                 (str(chat_id), str(user_id)))
                 await db.commit()
                 return True
             except:
@@ -48,15 +72,28 @@ class SantaGame:
 
     @classmethod
     async def get_players(cls, chat_id):
+        """
+        Получает список игроков в группе.
+        Принимает chat_id --- id группы, в которой ведётся игра.
+        Возвращает list comprehension --- список игроков.
+        Является @classmethod.
+        """
         async with aiosqlite.connect(cls.db) as db:
             async with db.execute('''SELECT user_id FROM participants 
                                      WHERE chat_id = ?''',
-                                  (str(chat_id), )) as cursor:
+                                  (str(chat_id),)) as cursor:
                 rows = await cursor.fetchall()
                 return [row[0] for row in rows]
 
     @classmethod
     async def make_draw(cls, chat_id):
+        """
+        Начинает жеребьёвку в чате.
+        Принимает chat_id --- id группы, в которой ведётся игра.
+        Возвращает None, если игроков в группе меньше 3.
+        Возвращает list --- список пар вида {player, recipient}, где player --- даритель подарка, recipient --- получатель подарка.
+        Является @classmethod.
+        """
         players = await cls.get_players(chat_id)
 
         if len(players) <= 2:
@@ -75,20 +112,32 @@ class SantaGame:
             for player_id, recipient_id in assignments:
                 await db.execute('''UPDATE participants SET recipient_id = ? 
                                     WHERE chat_id = ? and user_id = ?''',
-                                    (str(recipient_id), str(chat_id), str(player_id)))
+                                 (str(recipient_id), str(chat_id), str(player_id)))
             await db.commit()
 
         return assignments
 
     @classmethod
     async def game_in_group(cls, group_id):
+        """
+        Проверяет, что игра в группе уже запущена.
+        Принимает group_id --- id группы, в которой ведётся игра.
+        Возвращает bool --- запущена ли игра в группе.
+        Является @classmethod.
+        """
         async with aiosqlite.connect(cls.db) as db:
             async with db.execute('''SELECT 1 FROM participants
-                                WHERE chat_id = ? LIMIT 1''', (group_id, )) as cursor:
+                                WHERE chat_id = ? LIMIT 1''', (group_id,)) as cursor:
                 result = await cursor.fetchone()
                 return result is not None
 
+
 async def update_santa_message(group_id, msg_id):
+    """
+    Обновляет сообщение о проведении игры "Тайный Санта" в группе.
+    Принимает group_id и msg_id --- id группы, в которой ведётся игра, и id сообщения о проведении игры.
+    Ничего не возвращает.
+    """
     message = "Хо-хо-хо! А кто это у нас решил поиграть в тайного санту?🎅\n\nИграют:\n"
     players = await SantaGame.get_players(group_id)
 
@@ -96,13 +145,20 @@ async def update_santa_message(group_id, msg_id):
         player = await bot.get_chat_member(chat_id=group_id, user_id=player_id)
         message += f"{ind}. [{player.user.first_name}](tg://user?id={player.user.id})\n"
 
-    add_button = InlineKeyboardButton(text="Хочу быть Сантой", url=f"t.me/Mavrik_my_Bot?start={group_id[4:]}-{msg_id}-0")
-    remove_button = InlineKeyboardButton(text="Передумал быть Сантой", url=f"t.me/Mavrik_my_Bot?start={group_id[4:]}-{msg_id}-1")
+    add_button = InlineKeyboardButton(text="Хочу быть Сантой",
+                                      url=f"t.me/Mavrik_my_Bot?start={group_id[4:]}-{msg_id}-0")
+    remove_button = InlineKeyboardButton(text="Передумал быть Сантой",
+                                         url=f"t.me/Mavrik_my_Bot?start={group_id[4:]}-{msg_id}-1")
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[add_button], [remove_button]])
-    await bot.edit_message_text(chat_id=group_id, message_id=msg_id, text=message, parse_mode="Markdown", reply_markup=keyboard)
+    await bot.edit_message_text(chat_id=group_id, message_id=msg_id, text=message, parse_mode="Markdown",
+                                reply_markup=keyboard)
+
 
 @router.message(Command("start"))
 async def start_message(msg: Message):
+    """
+    Обрабатывает команду /start.
+    """
     args = msg.text.split()
 
     if len(args) > 1 and msg.chat.type == "private":
@@ -125,21 +181,26 @@ async def start_message(msg: Message):
 
             if success:
                 chat = await bot.get_chat(group_id)
-                await msg.answer(f"🎄Ты отказался от игры в чате *{chat.title}*. Если передумаешь --- возвращайся🎅",parse_mode="Markdown")
+                await msg.answer(f"🎄Ты отказался от игры в чате *{chat.title}*. Если передумаешь --- возвращайся🎅",
+                                 parse_mode="Markdown")
                 await update_santa_message(group_id, msg_id)
             else:
                 await msg.answer("Ты и так не играешь в этом чате!")
     else:
         await msg.answer("Привет! Меня зовут Маврик! Я маленький добренький котик, "
-                            "живущий самой обычной жизнью) Надеюсь, мы подружимся!😸❤️\n\n"
-                            "Не забудь подписаться на официальный канал -> @How_Mavrik_was_made")
+                         "живущий самой обычной жизнью) Надеюсь, мы подружимся!😸❤️\n\n"
+                         "Не забудь подписаться на официальный канал -> @How_Mavrik_was_made")
+
 
 @router.message(Command("santa"))
 async def santa(msg: Message):
+    """
+    Обрабатывает команду /santa.
+    """
     if msg.chat.type not in ["group", "supergroup"]:
         return await msg.answer("Я бы с радостью подарил тебе все подарки мира, "
-                            "но, к сожалению, команду можно использовать "
-                            "только в групповых чатах")
+                                "но, к сожалению, команду можно использовать "
+                                "только в групповых чатах")
 
     chat_id = str(msg.chat.id)
     user_id = msg.from_user.id
@@ -160,8 +221,12 @@ async def santa(msg: Message):
     message = await msg.answer("Хо-хо-хо! А кто это у нас решил поиграть в тайного санту?🎅", reply_markup=keyboard)
     return await update_santa_message(chat_id, message.message_id)
 
+
 @router.message(Command("start_santa"))
 async def start_santa(msg: Message):
+    """
+    Обрабатывает команду /start_santa.
+    """
     if msg.chat.type not in ["group", "supergroup"]:
         return await msg.answer("Эта команда не может быть запущена в личных сообщениях!")
 
@@ -176,13 +241,15 @@ async def start_santa(msg: Message):
     if pairs is None:
         return await msg.answer("В Тайного Санту должно играть как минимум 3 человека")
 
-    final_message = "🎁Жеребьёвка окончена! Тайными Сантами стали:\n";
+    final_message = "🎁Жеребьёвка окончена! Тайными Сантами стали:\n"
 
     for ind, (santa_id, recipient_id) in enumerate(pairs, 1):
         santa = await bot.get_chat(santa_id)
         recipient = await bot.get_chat(recipient_id)
 
-        await bot.send_message(chat_id=santa_id, text=f"🎇Хо-хо! На этот Новый Год ты становишься тайным сантой для [{recipient.first_name}](tg://user?id={recipient_id})", parse_mode="Markdown")
+        await bot.send_message(chat_id=santa_id,
+                               text=f"🎇Хо-хо! На этот Новый Год ты становишься тайным сантой для [{recipient.first_name}](tg://user?id={recipient_id})",
+                               parse_mode="Markdown")
 
         final_message += f"{ind}. [{santa.first_name}](tg://user?id={santa_id})\n"
 
