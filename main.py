@@ -1,7 +1,8 @@
 import asyncio
 import logging
 
-from santa import router, bot, dp, SantaGame
+from santa import SantaGame
+from start_aiogram import router, bot, dp
 
 async def main():
     dp.include_router(router)

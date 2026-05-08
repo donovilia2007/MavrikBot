@@ -1,17 +1,9 @@
 import random
 import aiosqlite
 
-from aiogram import Router, Dispatcher, Bot
 from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.filters import Command
-from aiogram.fsm.storage.memory import MemoryStorage
-
-router = Router()
-f = open("TOKEN.txt")
-token = f.read()
-dp = Dispatcher(storage=MemoryStorage())
-bot = Bot(token=token)
-
+from start_aiogram import router, bot
 
 class SantaGame:
     """
@@ -36,7 +28,7 @@ class SantaGame:
             await db.commit()
 
     @classmethod
-    async def add_player(cls, chat_id, user_id):
+    async def add_player(cls, chat_id: int | str, user_id: int | str):
         """
         Добавляет пользователя в игру.
         Принимает chat_id и user_id --- id группы, в которой ведётся игра и id пользователя, который хочет вступить в игру.
@@ -53,7 +45,7 @@ class SantaGame:
                 return False
 
     @classmethod
-    async def remove_player(cls, chat_id, user_id):
+    async def remove_player(cls, chat_id: int | str, user_id: int | str):
         """
         Удаляет пользователя из игры.
         Принимает chat_id и user_id --- id группы, в которой ведётся игра и id пользователя, который хочет выйти из игры.
@@ -71,7 +63,7 @@ class SantaGame:
                 return False
 
     @classmethod
-    async def get_players(cls, chat_id):
+    async def get_players(cls, chat_id: int | str):
         """
         Получает список игроков в группе.
         Принимает chat_id --- id группы, в которой ведётся игра.
@@ -86,7 +78,7 @@ class SantaGame:
                 return [row[0] for row in rows]
 
     @classmethod
-    async def make_draw(cls, chat_id):
+    async def make_draw(cls, chat_id: int | str):
         """
         Начинает жеребьёвку в чате.
         Принимает chat_id --- id группы, в которой ведётся игра.
@@ -118,7 +110,7 @@ class SantaGame:
         return assignments
 
     @classmethod
-    async def game_in_group(cls, group_id):
+    async def game_in_group(cls, group_id: int | str):
         """
         Проверяет, что игра в группе уже запущена.
         Принимает group_id --- id группы, в которой ведётся игра.
@@ -132,7 +124,7 @@ class SantaGame:
                 return result is not None
 
 
-async def update_santa_message(group_id, msg_id):
+async def update_santa_message(group_id: int | str, msg_id: int | str):
     """
     Обновляет сообщение о проведении игры "Тайный Санта" в группе.
     Принимает group_id и msg_id --- id группы, в которой ведётся игра, и id сообщения о проведении игры.
