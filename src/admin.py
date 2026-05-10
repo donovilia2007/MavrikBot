@@ -1,5 +1,5 @@
 from aiogram import Router
-from aiogram.types import Message, ChatPermissions
+from aiogram.types import Message, ChatPermissions, ChatMember
 from aiogram.filters import Command
 from start_aiogram import bot
 from datetime import datetime, timedelta
@@ -7,11 +7,26 @@ from datetime import datetime, timedelta
 router = Router()
 
 
-async def can_user_mute(person, person_mute):
-    return person.status == 'creator' or person.can_restrict_members and person_mute.status == 'member'
+async def can_user_mute(user: ChatMember, user_mute: ChatMember):
+    """
+    Проверяет, что пользователь может замутить другого пользователя.
+
+    Принимает на вход user и user_mute --- двух пользователей.
+
+    Возвращает bool --- Может ли первый пользователь забанить второго.
+
+    """
+    return user.status == 'creator' or user.can_restrict_members and user_mute.status == 'member'
 
 
 def CaseDays(time: int):
+    """
+    Ставит слово "день" в нужный падеж.
+
+    Принимает time --- количество дней.
+
+    Возвращает string --- слово в правильном падеже.
+    """
     if time % 10 == 1 and time % 100 != 11:
         return "день"
 
@@ -22,6 +37,13 @@ def CaseDays(time: int):
 
 
 def CaseMinutes(time: int):
+    """
+    Ставит слово "минута" в нужный падеж.
+
+    Принимает time --- количество минут.
+
+    Возвращает string --- слово в правильном падеже.
+    """
     if time % 10 == 1 and time % 100 != 11:
         return "минуту"
 
@@ -32,6 +54,13 @@ def CaseMinutes(time: int):
 
 
 def CaseHours(time: int):
+    """
+    Ставит слово "час" в нужный падеж.
+
+    Принимает time --- количество часов.
+
+    Возвращает string --- слово в правильном падеже.
+    """
     if time % 10 == 1 and time % 100 != 11:
         return "час"
 
@@ -42,6 +71,11 @@ def CaseHours(time: int):
 
 
 class Administrator:
+    """
+    Administrator --- класс, отвечающий за администрирование чатов.
+
+    Имеет аттрибут mute_permissions --- права, которые будут у пользователя после мута.
+    """
     mute_permissions = ChatPermissions(can_send_messages=False, can_send_audios=False,
                                        can_send_documents=False, can_send_photos=False,
                                        can_send_videos=False, can_send_video_notes=False,
@@ -49,7 +83,16 @@ class Administrator:
                                        can_send_other_messages=False, can_add_web_page_previews=False)
 
     @classmethod
-    async def muteInMinutes(cls, chat_id, user, time):
+    async def muteInMinutes(cls, chat_id: int | str, user: ChatMember, time: int):
+        """
+        Мутит пользователя на определённое в минутах время.
+
+        Принимает chat_id, user, time --- id группы, в котором хотят замутить пользователя, пользователя и время в минутах соответственно.
+
+        Не возвращает ничего.
+
+        Является @classmethod.
+        """
         await bot.restrict_chat_member(chat_id=chat_id, user_id=user.user.id,
                                        permissions=cls.mute_permissions,
                                        until_date=datetime.now() + timedelta(minutes=time))
@@ -61,7 +104,16 @@ class Administrator:
                                parse_mode="Markdown")
 
     @classmethod
-    async def muteInHours(cls, chat_id, user, time):
+    async def muteInHours(cls, chat_id: int | str, user: ChatMember, time: int):
+        """
+        Мутит пользователя на определённое в часах время.
+
+        Принимает chat_id, user, time --- id группы, в котором хотят замутить пользователя, пользователя и время в часах соответственно.
+
+        Не возвращает ничего.
+
+        Является @classmethod.
+        """
         await bot.restrict_chat_member(chat_id=chat_id, user_id=user.user.id,
                                        permissions=cls.mute_permissions,
                                        until_date=datetime.now() + timedelta(hours=time))
@@ -73,7 +125,16 @@ class Administrator:
                                parse_mode="Markdown")
 
     @classmethod
-    async def muteInDays(cls, chat_id, user, time):
+    async def muteInDays(cls, chat_id: int | str, user: ChatMember, time: int):
+        """
+        Мутит пользователя на определённое в днях время.
+
+        Принимает chat_id, user, time --- id группы, в котором хотят замутить пользователя, пользователя и время в днях соответственно.
+
+        Не возвращает ничего.
+
+        Является @classmethod.
+        """
         await bot.restrict_chat_member(chat_id=chat_id, user_id=user.user.id,
                                        permissions=cls.mute_permissions,
                                        until_date=datetime.now() + timedelta(days=time))
@@ -85,7 +146,16 @@ class Administrator:
                                parse_mode="Markdown")
 
     @classmethod
-    async def unmute(cls, chat_id, user):
+    async def unmute(cls, chat_id: int | str, user: ChatMember):
+        """
+        Анмутит пользователя.
+
+        Принимает chat_id, user, --- id группы, в котором хотят размутить пользователя и пользователя соответственно.
+
+        Не возвращает ничего.
+
+        Является @classmethod.
+        """
         chat = await bot.get_chat(chat_id)
         permissions = chat.permissions
 
@@ -97,6 +167,9 @@ class Administrator:
 
 @router.message(Command("mute"))
 async def mute(msg: Message):
+    """
+    Обрабатывает команду /mute.
+    """
     if msg.chat.type not in ["group", "supergroup"]:
         return await msg.answer("Эту команду нельзя использовать в личных сообщениях")
 
@@ -148,6 +221,9 @@ async def mute(msg: Message):
 
 @router.message(Command("unmute"))
 async def unmute(msg: Message):
+    """
+    Обрабатывает команду /unmute.
+    """
     if msg.chat.type not in ["group", "supergroup"]:
         return await msg.answer("Эту команду нельзя использовать в личных сообщениях")
 
