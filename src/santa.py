@@ -1,9 +1,12 @@
 import random
 import aiosqlite
 
+from aiogram import Router
 from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.filters import Command
-from start_aiogram import router, bot
+from start_aiogram import bot
+
+router = Router()
 
 class SantaGame:
     """
