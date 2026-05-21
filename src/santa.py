@@ -8,6 +8,7 @@ from start_aiogram import bot
 
 router = Router()
 
+
 class SantaGame:
     """
     SantaGame --- класс, который отвечает за базу данных со всеми играми в Тайного Санту.
@@ -73,6 +74,24 @@ class SantaGame:
                 return True
             except:
                 return False
+
+    @classmethod
+    async def get_player_games(cls, user_id: int | str):
+        """
+        Получает все игры для конкретного пользователя.
+
+        Принимает user_id --- id пользователя.
+
+        Возвращает list comprehension --- список пар {chat_id, recipient_id},
+        где chat_id --- id группы, в которой пользователь играет в Тайного Санту, и recipient_it --- получатель подарка от пользователя.
+
+        Является @classmethod.
+        """
+        async with aiosqlite.connect(cls.db) as db:
+            async with db.execute('''SELECT chat_id, recipient_id FROM participants
+                                     WHERE user_id = ?''', (str(user_id),)) as cursor:
+                pairs = await cursor.fetchall()
+                return [[pair[0], pair[1]] for pair in pairs]
 
     @classmethod
     async def get_players(cls, chat_id: int | str):
@@ -166,6 +185,7 @@ class SantaGame:
                 return True
             except:
                 return False
+
 
 async def update_santa_message(group_id: int | str, msg_id: int | str):
     """
@@ -292,6 +312,7 @@ async def start_santa(msg: Message):
 
     return await msg.answer(text=final_message, parse_mode="Markdown")
 
+
 @router.message(Command("clear_game"))
 async def clear_game(msg: Message):
     if msg.chat.type not in ["group", "supergroup"]:
@@ -306,6 +327,28 @@ async def clear_game(msg: Message):
     success = await SantaGame.clear_game(chat_id)
 
     if not success:
-       return await msg.answer("В этой группе не проводится игра в Тайного Санту. Но если хотите, напишите /santa")
+        return await msg.answer("В этой группе не проводится игра в Тайного Санту. Но если хотите, напишите /santa")
 
-    return await msg.answer("История предыдущей игры в Тайного Санту очищена! Если хотите сыграть ещё раз, напишите /santa")
+    return await msg.answer(
+        "История предыдущей игры в Тайного Санту очищена! Если хотите сыграть ещё раз, напишите /santa")
+
+@router.message(Command("where_santa"))
+async def where_santa(msg: Message):
+    if msg.chat.type != "private":
+        return await msg.answer("Давай не будем раскрывать твои секреты в этом чате")
+
+    user_id = msg.from_user.id
+
+    pairs = await SantaGame.get_player_games(user_id)
+
+    if not pairs:
+        return await msg.answer("Пока что ты не являешься Тайным Сантом ни для кого")
+
+    final_message = "🎇Хо-хо! На этот Новый Год ты Тайный Санта для:\n"
+
+    for ind, (chat_id, recipient_id) in enumerate(pairs, 1):
+        recipient = await bot.get_chat(recipient_id)
+        chat = await bot.get_chat(chat_id)
+        final_message += f"{ind}. [{recipient.first_name}](tg://user?id={recipient_id}) в группе *{chat.title}*\n"
+
+    return await msg.answer(text=final_message, parse_mode="Markdown")

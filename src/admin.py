@@ -16,7 +16,7 @@ async def can_user_mute(user: ChatMember, user_mute: ChatMember):
     Возвращает bool --- Может ли первый пользователь забанить второго.
 
     """
-    return user.status == 'creator' or user.can_restrict_members and user_mute.status == 'member'
+    return user.status in ['creator', 'administrator']
 
 
 def CaseDays(time: int):
@@ -236,7 +236,35 @@ async def unmute(msg: Message):
     person_mute_id = msg.reply_to_message.from_user.id
     person_mute = await bot.get_chat_member(chat_id, person_mute_id)
 
-    if person.status == 'creator' or person.can_restrict_members == True:
+    if await can_user_mute(person, person_mute):
         return await Administrator.unmute(chat_id, person_mute)
 
     return await msg.answer("Ты не можешь использовать эту команду!")
+
+
+help_message = '''
+<b>Про котиков</b>
+На любое сообщение, в котором есть подстрока "мур" или "мяу" отправляется стикер с котиком
+
+<b>Про Тайного Санту</b>
+Команды, актуальные для групп:
+
+/santa - открыть запись на игру
+/start_santa - провести жеребьёвку
+/clear_game - очистить информацию о последней игре
+
+Команда актуальная для личных сообщений:
+/where_santa - вывести список всех групп и всех получателей подарков от пользователя
+
+<b>Про администрирование</b>
+/mute [num (m | h | d)] - замутить пользователя. По умолчанию мутит на 15 минут в чате
+Можно мутить на определённое количество минут | часов | дней, для этого указывая нужный символ
+/unmute - размутить пользователя'''
+
+
+@router.message(Command("help"))
+async def help(msg: Message):
+    """
+    Выводит информацию о командах.
+    """
+    await msg.answer(text=help_message, parse_mode="HTML")
